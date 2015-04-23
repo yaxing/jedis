@@ -11,6 +11,7 @@ import java.util.List;
 import redis.clients.jedis.Protocol.Command;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.util.IOUtils;
 import redis.clients.util.RedisInputStream;
 import redis.clients.util.RedisOutputStream;
 import redis.clients.util.SafeEncoder;
@@ -161,14 +162,13 @@ public class Connection implements Closeable {
   public void disconnect() {
     if (isConnected()) {
       try {
-        inputStream.close();
-        if (!socket.isClosed()) {
-          outputStream.close();
-          socket.close();
-        }
+        outputStream.flush();
+        socket.close();
       } catch (IOException ex) {
         broken = true;
         throw new JedisConnectionException(ex);
+      } finally {
+        IOUtils.closeQuietly(socket);
       }
     }
   }
